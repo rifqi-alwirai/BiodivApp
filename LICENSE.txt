@@ -1,0 +1,20 @@
+Hak Cipta © 2025 Rifqi Maulid
+
+Proyek BiodivApp12 dibuat untuk mendukung analisis biodiversitas ikan karang bagi komunitas konservasi laut.
+
+Distribusi dan modifikasi diperbolehkan untuk keperluan non-komersial, penelitian, dan edukasi, selama mencantumkan atribusi kepada pembuat asli.
+
+Larangan:
+- Penggunaan untuk tujuan komersial tanpa izin tertulis
+- Penghapusan informasi copyright atau atribusi pustaka
+- Reproduksi data dengan potensi pelanggaran Protokol Nagoya dan hak komunitas lokal
+
+Komponen pihak ketiga dalam proyek ini tunduk pada lisensi open-source masing-masing:
+- Streamlit (Apache 2.0)
+- Pandas, NumPy, SciPy, Scikit-learn, xlrd (BSD License)
+- Matplotlib, Seaborn (PSF License & BSD)
+- openpyxl, XlsxWriter, Plotly (MIT License)
+
+Seluruh dependensi diinstal melalui `BiodivApp_requirements.txt` dan telah diverifikasi untuk digunakan bebas dalam produk digital konservasi.
+
+Untuk pertanyaan lisensi, silakan hubungi: rifqi.maulid@gmail.com
