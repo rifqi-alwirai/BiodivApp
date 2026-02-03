@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import base64
 
-from pathlib import path
+from pathlib import Path
 from konversi import konversi_biomassa, konversi_kelimpahan
 from utils.ekspor_excel import prepare_tab, generate_excel_multisheet
 from utils.loader import load_monitoring_file, load_basis_file
