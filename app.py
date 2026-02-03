@@ -225,36 +225,40 @@ if file_monitoring and file_basis:
             # 👇 LETAKKAN DI SINI
             st.caption("📌 Klik keterangan indeks untuk memahami makna nilai yang ditampilkan.")
         
-        with st.expander("📖 Keterangan & Interpretasi Indeks Ekologi"):
+        with st.expander("📖 Keterangan & Interpretasi Indeks Ekologi", expanded=False):
             st.markdown("""
         **Indeks Keanekaragaman Shannon–Wiener (H')**  
         Mengukur keanekaragaman spesies dengan mempertimbangkan kekayaan dan persebaran individu.
-        - H' < 1,0 → Keanekaragaman rendah; ekosistem tertekan  
-        - 1,0 < H' < 3,322 → Keanekaragaman sedang; kondisi relatif seimbang  
-        - H' > 3,322 → Keanekaragaman tinggi; ekosistem sangat mantap  
+        
+        - **H' < 1,0** → Keanekaragaman rendah; ekosistem tertekan  
+        - **1,0 < H' < 3,322** → Keanekaragaman sedang; kondisi relatif seimbang  
+        - **H' > 3,322** → Keanekaragaman tinggi; ekosistem sangat mantap  
         
         ---
         
         **Indeks Kemerataan (Evenness – E)**  
         Menunjukkan tingkat pemerataan jumlah individu antar spesies.
-        - 0,00 < E ≤ 0,40 → Kemerataan rendah (dominansi tinggi)  
-        - 0,41 < E ≤ 0,60 → Kemerataan sedang  
-        - 0,61 < E ≤ 1,00 → Kemerataan tinggi  
+        
+        - **0,00 < E ≤ 0,40** → Kemerataan rendah (dominansi tinggi)  
+        - **0,41 < E ≤ 0,60** → Kemerataan sedang  
+        - **0,61 < E ≤ 1,00** → Kemerataan tinggi  
         
         ---
         
         **Indeks Dominansi Simpson (D)**  
-        Menggambarkan dominansi spesies tertentu dalam komunitas.
-        - D → 0 : keanekaragaman tinggi, tanpa dominansi ekstrem  
-        - D → 1 : keanekaragaman rendah, dominansi kuat  
+        Menggambarkan dominansi spesies tertentu dalam komunitas (0–1).
+        
+        - **D mendekati 0** → Keanekaragaman tinggi, tanpa dominansi ekstrem  
+        - **D mendekati 1** → Keanekaragaman rendah, dominansi kuat  
         
         **Interpretasi skor (Guajardo, 2015):**  
-        0,01–0,40 (rendah), 0,41–0,60 (moderat), 0,61–0,80 (cukup tinggi), 0,81–0,99 (tinggi)
+        0,01–0,40 (rendah) | 0,41–0,60 (moderat) | 0,61–0,80 (cukup tinggi) | 0,81–0,99 (tinggi)
         
         ---
         
         ℹ️ *Catatan teknis:*  
-        Indeks Shannon lebih sensitif terhadap spesies langka, sedangkan indeks Simpson lebih sensitif terhadap spesies dominan.
+        Indeks **Shannon** lebih sensitif terhadap spesies langka,  
+        sedangkan indeks **Simpson** lebih sensitif terhadap spesies dominan.
         """)
 
         
