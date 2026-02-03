@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import base64
 
+from pathlib import path
 from konversi import konversi_biomassa, konversi_kelimpahan
 from utils.ekspor_excel import prepare_tab, generate_excel_multisheet
 from utils.loader import load_monitoring_file, load_basis_file
@@ -87,10 +88,40 @@ with col_main:
     """, unsafe_allow_html=True)    
 
     st.header("📥 Unggah Data Monitoring")
-    file_monitoring = st.file_uploader("Unggah file hasil monitoring:", type=["xlsx"], key="monitoring")
+    file_monitoring = st.file_uploader(
+        "Unggah file hasil monitoring:",
+        type=["xlsx"],
+        key="monitoring"
+    )
 
+    # tombol unduh template monitoring
+    template_monitoring = Path("data/template_monitoring.xlsx")
+    with open(template_monitoring, "rb") as f:
+        st.caption("📌 Gunakan template agar format data sesuai dengan sistem aplikasi.")
+        st.download_button(
+            label="📄 Unduh Template Data Monitoring",
+            data=f,
+            file_name="Template_Data_Monitoring_Ikan_Karang.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+        
     st.header("📚 Unggah Basis Data Ikan")
-    file_basis = st.file_uploader("Unggah basis data referensi:", type=["xlsx"], key="basis")
+    file_basis = st.file_uploader(
+        "Unggah basis data referensi:",
+        type=["xlsx"],
+        key="basis"
+    )
+
+    # tombol unduh template basis data ikan
+    template_basis = Path("data/template_basis_data_ikan.xlsx")
+    with open(template_basis, "rb") as f:
+        st.caption("📌 Gunakan template agar format data sesuai dengan sistem aplikasi.")
+        st.download_button(
+            label="📄 Unduh Template Basis Data Ikan",
+            data=f,
+            file_name="Template_Basis_Data_Ikan_Karang.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
 if file_monitoring and file_basis:
     data_uvc, kondisi_stasiun = load_monitoring_file(file_monitoring)
