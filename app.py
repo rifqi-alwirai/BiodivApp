@@ -222,6 +222,42 @@ if file_monitoring and file_basis:
             col2.metric("⚖️ Evenness", nilai_evenness if nilai_evenness is not None else "–")
             col3.metric("🧩 Simpson", nilai_simpson if nilai_simpson is not None else "–")
 
+            # 👇 LETAKKAN DI SINI
+            st.caption("📌 Klik keterangan indeks untuk memahami makna nilai yang ditampilkan.")
+        
+        with st.expander("📖 Keterangan & Interpretasi Indeks Ekologi"):
+            st.markdown("""
+        **Indeks Keanekaragaman Shannon–Wiener (H')**  
+        Mengukur keanekaragaman spesies dengan mempertimbangkan kekayaan dan persebaran individu.
+        - H' < 1,0 → Keanekaragaman rendah; ekosistem tertekan  
+        - 1,0 < H' < 3,322 → Keanekaragaman sedang; kondisi relatif seimbang  
+        - H' > 3,322 → Keanekaragaman tinggi; ekosistem sangat mantap  
+        
+        ---
+        
+        **Indeks Kemerataan (Evenness – E)**  
+        Menunjukkan tingkat pemerataan jumlah individu antar spesies.
+        - 0,00 < E ≤ 0,40 → Kemerataan rendah (dominansi tinggi)  
+        - 0,41 < E ≤ 0,60 → Kemerataan sedang  
+        - 0,61 < E ≤ 1,00 → Kemerataan tinggi  
+        
+        ---
+        
+        **Indeks Dominansi Simpson (D)**  
+        Menggambarkan dominansi spesies tertentu dalam komunitas.
+        - D → 0 : keanekaragaman tinggi, tanpa dominansi ekstrem  
+        - D → 1 : keanekaragaman rendah, dominansi kuat  
+        
+        **Interpretasi skor (Guajardo, 2015):**  
+        0,01–0,40 (rendah), 0,41–0,60 (moderat), 0,61–0,80 (cukup tinggi), 0,81–0,99 (tinggi)
+        
+        ---
+        
+        ℹ️ *Catatan teknis:*  
+        Indeks Shannon lebih sensitif terhadap spesies langka, sedangkan indeks Simpson lebih sensitif terhadap spesies dominan.
+        """)
+
+        
         # 📊 Tampilkan Indeks Ekologi per Stasiun
         with st.expander("📊 Indeks Ekologi per Stasiun", expanded=True):
             if not df_indeks.empty:
