@@ -100,6 +100,13 @@ section[data-testid="stSidebar"] {{
   background-color: rgba(10, 20, 40, 0.90);
 }}
 
+/* === AKTIFKAN SCROLL SIDEBAR === */
+section[data-testid="stSidebar"] > div {{
+  overflow-y: auto;
+  max-height: 100vh;
+  padding-bottom: 2rem;
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
