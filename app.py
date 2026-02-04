@@ -48,21 +48,58 @@ bg_bin = get_base64_of_bin_file("assets/background.png")
 
 st.markdown(f"""
 <style>
-[data-testid="stAppViewContainer"] {{
+
+/* === ROOT APP === */
+.stApp {{
   background-image: url("data:image/png;base64,{bg_bin}");
   background-size: cover;
-  background-attachment: fixed;
   background-position: center;
-  background-repeat: no-repeat;
-  background-blend-mode: darken;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-attachment: fixed;
 }}
 
+/* === OVERLAY GELAP (KUNCI KONTRAS TEKS) === */
+.stApp::before {{
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 15, 30, 0.60);
+  z-index: 0;
+}}
+
+/* === PASTIKAN KONTEN DI ATAS OVERLAY === */
+.stApp > div {{
+  position: relative;
+  z-index: 1;
+}}
+
+/* === MAIN CONTAINER === */
 [data-testid="stAppViewContainer"] > .main {{
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   padding: 1rem;
 }}
+
+/* === PAKSA WARNA TEKS AMAN === */
+h1, h2, h3, h4, h5, h6,
+p, span, label, li, div {{
+  color: #EAF6FF !important;
+}}
+
+/* === METRIC === */
+[data-testid="stMetricValue"] {{
+  color: #FFFFFF !important;
+}}
+
+/* === EXPANDER HEADER === */
+.streamlit-expanderHeader {{
+  color: #EAF6FF !important;
+}}
+
+/* === SIDEBAR === */
+section[data-testid="stSidebar"] {{
+  background-color: rgba(10, 20, 40, 0.90);
+}}
+
 </style>
 """, unsafe_allow_html=True)
 
