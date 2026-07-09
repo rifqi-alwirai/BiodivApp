@@ -392,80 +392,50 @@ if file_monitoring and file_basis:
                 "index_stasiun": "Indeks"
             })
 
-        st.header("📤 Ekspor Biodiversitas Excel Multi-Sheet")
+        st.header("📤 Ekspor Biodiversitas Excel Komprehensif")
         
-        # ✅ FITUR BARU: PILIHAN FORMAT EKSPOR
-        st.markdown("### 📋 Pilih Format Ekspor")
-        format_ekspor = st.radio(
-            "Tipe Laporan:",
-            ["Format Standar (Spesies/Famili)", "Format Komprehensif (Indeks + Kelimpahan + Biomassa + Keanekaragaman)"],
-            horizontal=True
-        )
+        st.markdown("""
+        📋 **Format Laporan:**
+        - **Sheet Tunggal** dengan semua metrik biodiversitas
+        - **Setiap kategori** menunjukkan nilai per stasiun + rata-rata
+        - **Satuan otomatis** menyesuaikan dengan mode tampilan yang dipilih
+        """)
         
         stasiun_order = sorted(df_merge["Stasiun"].unique())
 
-        if format_ekspor == "Format Standar (Spesies/Famili)":
-            # 🔷 FORMAT LAMA: Spesies vs Famili
-            group_by = st.radio("Tabulasi berdasarkan:", ["Spesies", "Famili"])
-            value_cols = [col for col in ["Biomassa", "Kelimpahan", "Keanekaragaman"] if col in df_merge.columns]
+        # 📊 PREVIEW TABULASI
+        st.markdown("### 📋 Preview Tabulasi")
+        try:
+            df_preview = prepare_comprehensive_report(
+                df_merge=df_merge,
+                df_indeks=df_indeks,
+                mode_tampilan=mode_tampilan,
+                stasiun_order=stasiun_order
+            )
+            st.dataframe(df_preview, use_container_width=True)
+        except Exception as e:
+            st.error(f"❌ Error saat membuat preview: {e}")
 
-            if not value_cols:
-                st.warning("⚠️ Kolom untuk ekspor belum tersedia (Biomassa, Kelimpahan, Keanekaragaman).")
-            else:
-                # ✅ Preview tabulasi hanya jika value_cols tersedia
-                st.markdown("### Preview Tabulasi")
-                preview_tab = prepare_tab(df_merge, value_col=value_cols[0], group_by=group_by)
-                st.dataframe(preview_tab.head(10))
-
-                # ✅ Tombol ekspor
-                if st.button("🧾 Unduh Excel Format Standar"):
-                    excel_buffer = generate_excel_multisheet(
-                        df_base=df_merge,
-                        group_by=group_by,
-                        value_columns=value_cols
-                    )
-                    st.download_button(
-                        label="📥 Unduh Excel Multi-Sheet",
-                        data=excel_buffer.getvalue(),
-                        file_name="BiodivApp_Export_Standar.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-        
-        else:
-            # 🔶 FORMAT BARU: KOMPREHENSIF
-            st.markdown("### 📊 Format Laporan Komprehensif")
-            st.info("""
-            Format ini menghasilkan **4 sheet terpisah**:
-            - **Sheet 1: Indeks Ekologi** → Shannon, Simpson, Evenness per stasiun
-            - **Sheet 2: Kelimpahan** → Individu per kelompok (ind/ha atau ind/350m²)
-            - **Sheet 3: Biomassa** → Biomassa per kelompok (kg/ha atau g/350m²)
-            - **Sheet 4: Keanekaragaman Jenis** → Jumlah spesies per kelompok
-            - **Sheet 5: Info Mode** → Dokumentasi mode & satuan yang digunakan
-            """)
-            
-            # Preview data
-            st.markdown("### 📋 Preview Sheet (Indeks)")
+        # 🧾 TOMBOL EKSPOR
+        st.markdown("### 🧾 Unduh Laporan")
+        if st.button("📥 Unduh Excel Laporan Komprehensif", use_container_width=True):
             try:
-                reports_preview = prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan, stasiun_order)
-                st.dataframe(reports_preview["Indeks"].head(10))
+                excel_buffer = generate_comprehensive_excel(
+                    df_merge=df_merge,
+                    df_indeks=df_indeks,
+                    mode_tampilan=mode_tampilan,
+                    stasiun_order=stasiun_order
+                )
+                
+                st.download_button(
+                    label="✅ Klik di sini untuk download",
+                    data=excel_buffer.getvalue(),
+                    file_name=f"BiodivApp_Laporan_{mode_tampilan.replace(' ', '_')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+                st.success("✅ File siap untuk diunduh!")
             except Exception as e:
-                st.error(f"❌ Error saat preview: {e}")
-            
-            # Tombol ekspor komprehensif
-            if st.button("🧾 Unduh Excel Format Komprehensif"):
-                try:
-                    excel_buffer = generate_comprehensive_excel(
-                        df_merge=df_merge,
-                        df_indeks=df_indeks,
-                        mode_tampilan=mode_tampilan,
-                        stasiun_order=stasiun_order
-                    )
-                    st.download_button(
-                        label="📥 Unduh Excel Komprehensif",
-                        data=excel_buffer.getvalue(),
-                        file_name=f"BiodivApp_Export_Komprehensif_{mode_tampilan.replace(' ', '_')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                    st.success("✅ File siap untuk diunduh!")
-                except Exception as e:
-                    st.error(f"❌ Error saat membuat Excel: {e}")
+                st.error(f"❌ Error saat membuat Excel: {e}")
+                import traceback
+                traceback.print_exc()
