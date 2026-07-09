@@ -1,10 +1,9 @@
 """
 📊 Format Laporan Komprehensif Biodiversitas
 ============================================
-Menghasilkan tabulasi format profesional dengan:
+Menghasilkan tabulasi format profesional dalam SATU SHEET dengan:
 - Baris: Kategori data + satuan (dinamis sesuai mode tampilan)
 - Kolom: Stasiun (ID) + Rata-rata
-- Multi-sheet export
 - Support mode: "Data Asli" atau "Data Terkonversi"
 """
 
@@ -28,29 +27,26 @@ def get_satuan_labels(mode_tampilan="Data Terkonversi"):
     --------
     dict
         {
-            'kelimpahan': 'ind/ha' or 'ind (350m²)',
-            'biomassa': 'kg/ha' or 'g (350m²)',
-            'biomassa_unit': 'kg/ha' or 'g'
+            'kelimpahan': 'ind/ha' or 'ind/stasiun',
+            'biomassa': 'kg/ha' or 'g/stasiun',
         }
     """
     if mode_tampilan == "Data Terkonversi":
         return {
             'kelimpahan': 'ind/ha',
             'biomassa': 'kg/ha',
-            'biomassa_unit': 'kg'
         }
     else:  # Data Asli
         return {
-            'kelimpahan': 'ind (350m²)',
-            'biomassa': 'g (350m²)',
-            'biomassa_unit': 'g'
+            'kelimpahan': 'ind/stasiun',
+            'biomassa': 'g/stasiun',
         }
 
 
 def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkonversi", stasiun_order=None):
     """
-    Siapkan laporan komprehensif dengan format:
-    - Baris 1: Header (Data/Stasiun | Stasiun1 | Stasiun2 | ... | Rata-rata)
+    Siapkan laporan komprehensif dalam FORMAT TUNGGAL dengan struktur:
+    - Baris 1: Header (Kategori | Stasiun1 | Stasiun2 | ... | Rata-rata)
     - Baris 2+: Kategori data (Indeks, Kelimpahan, Biomassa, Keanekaragaman)
     
     Parameters:
@@ -66,13 +62,8 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
     
     Returns:
     --------
-    dict
-        {
-            'Indeks': DataFrame indeks ekologi,
-            'Kelimpahan': DataFrame kelimpahan per kelompok,
-            'Biomassa': DataFrame biomassa per kelompok,
-            'Keanekaragaman': DataFrame keanekaragaman per kelompok
-        }
+    DataFrame
+        Tabulasi lengkap dengan semua metrik
     """
     
     if stasiun_order is None:
@@ -85,15 +76,21 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
     # Dapatkan label satuan sesuai mode
     satuan = get_satuan_labels(mode_tampilan)
     
-    reports = {}
+    # ========== BUAT TABULASI TUNGGAL ==========
+    all_rows = []
     
     # ========== 1. INDEKS EKOLOGI ==========
     df_indeks_report = df_indeks[["Stasiun", "Shannon", "Simpson", "Evenness"]].copy()
     df_indeks_report = df_indeks_report[df_indeks_report["Stasiun"].isin(stasiun_order)]
     df_indeks_report = df_indeks_report.set_index("Stasiun").reindex(stasiun_order)
     
-    # Transform menjadi format: kategori × stasiun
-    indeks_data = []
+    # Bagian Indeks header
+    all_rows.append({
+        'Kategori': '=== INDEKS EKOLOGI ===',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
+    
     for idx_name in ["Shannon", "Simpson", "Evenness"]:
         row_data = {"Kategori": f"Indeks {idx_name}"}
         values = []
@@ -105,13 +102,23 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         
         rata_rata = sum(values) / len(values) if values else 0
         row_data["Rata-rata"] = round(rata_rata, 4)
-        indeks_data.append(row_data)
+        all_rows.append(row_data)
     
-    reports["Indeks"] = pd.DataFrame(indeks_data)
+    # Blank row
+    all_rows.append({
+        'Kategori': '',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
     
     # ========== 2. KELIMPAHAN PER KELOMPOK ==========
     kelompok_list = sorted(df_merge["Kelompok"].unique())
-    kelimpahan_data = []
+    
+    all_rows.append({
+        'Kategori': '=== KELIMPAHAN (Individu) ===',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
     
     for kelompok in kelompok_list:
         df_k = df_merge[df_merge["Kelompok"] == kelompok]
@@ -126,12 +133,21 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         
         rata_rata = sum(values) / len(stasiun_order) if values else 0
         row_data["Rata-rata"] = round(rata_rata, 2)
-        kelimpahan_data.append(row_data)
+        all_rows.append(row_data)
     
-    reports["Kelimpahan"] = pd.DataFrame(kelimpahan_data)
+    # Blank row
+    all_rows.append({
+        'Kategori': '',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
     
     # ========== 3. BIOMASSA PER KELOMPOK ==========
-    biomassa_data = []
+    all_rows.append({
+        'Kategori': '=== BIOMASSA ===',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
     
     for kelompok in kelompok_list:
         df_k = df_merge[df_merge["Kelompok"] == kelompok]
@@ -146,12 +162,21 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         
         rata_rata = sum(values) / len(stasiun_order) if values else 0
         row_data["Rata-rata"] = round(rata_rata, 2)
-        biomassa_data.append(row_data)
+        all_rows.append(row_data)
     
-    reports["Biomassa"] = pd.DataFrame(biomassa_data)
+    # Blank row
+    all_rows.append({
+        'Kategori': '',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
     
     # ========== 4. KEANEKARAGAMAN JENIS PER KELOMPOK ==========
-    keanekaragaman_data = []
+    all_rows.append({
+        'Kategori': '=== KEANEKARAGAMAN JENIS ===',
+        **{stasiun: '' for stasiun in stasiun_order},
+        'Rata-rata': ''
+    })
     
     for kelompok in kelompok_list:
         df_k = df_merge[df_merge["Kelompok"] == kelompok]
@@ -166,30 +191,17 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         
         rata_rata = sum(values) / len(stasiun_order) if values else 0
         row_data["Rata-rata"] = round(rata_rata, 1)
-        keanekaragaman_data.append(row_data)
+        all_rows.append(row_data)
     
-    reports["Keanekaragaman"] = pd.DataFrame(keanekaragaman_data)
+    # ========== BUAT DATAFRAME FINAL ==========
+    df_report = pd.DataFrame(all_rows)
     
-    # ========== 5. SHEET INFORMASI MODE ==========
-    # Tambahkan sheet terpisah untuk dokumentasi mode & satuan
-    info_data = {
-        "Kategori": ["Mode Tampilan", "Satuan Kelimpahan", "Satuan Biomassa", "Area Survey", "Faktor Konversi ke/ha"],
-        "Nilai": [
-            mode_tampilan,
-            satuan['kelimpahan'],
-            satuan['biomassa'],
-            "350 m²",
-            "10,000 m² / 350 m² = 28.57"
-        ]
-    }
-    reports["Info"] = pd.DataFrame(info_data)
-    
-    return reports
+    return df_report
 
 
 def generate_comprehensive_excel(df_merge, df_indeks, mode_tampilan="Data Terkonversi", stasiun_order=None):
     """
-    Generate Excel multi-sheet dengan format laporan komprehensif.
+    Generate Excel SINGLE-SHEET dengan format laporan komprehensif.
     
     Parameters:
     -----------
@@ -205,83 +217,103 @@ def generate_comprehensive_excel(df_merge, df_indeks, mode_tampilan="Data Terkon
         Excel file buffer siap untuk download
     """
     
-    reports = prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan, stasiun_order)
+    df_report = prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan, stasiun_order)
     buffer = io.BytesIO()
     
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
-        for sheet_index, (sheet_name, df_report) in enumerate(reports.items()):
-            df_report.to_excel(writer, sheet_name=sheet_name, index=False)
-            
-            worksheet = writer.sheets[sheet_name]
-            
-            # 🖌️ Format header - berbeda untuk sheet "Info"
-            if sheet_name == "Info":
-                header_fill = PatternFill(start_color="666666", end_color="666666", fill_type="solid")
-            else:
-                header_fill = PatternFill(start_color="003f5c", end_color="003f5c", fill_type="solid")
-            
-            header_font = Font(bold=True, color="FFFFFF", size=11)
-            border = Border(
-                left=Side(style='thin'),
-                right=Side(style='thin'),
-                top=Side(style='thin'),
-                bottom=Side(style='thin')
-            )
-            
-            for col_num, col_name in enumerate(df_report.columns, 1):
-                cell = worksheet.cell(row=1, column=col_num)
-                cell.value = col_name
-                cell.fill = header_fill
-                cell.font = header_font
-                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+        # Hanya 1 sheet
+        df_report.to_excel(writer, sheet_name="Laporan Komprehensif", index=False)
+        
+        worksheet = writer.sheets["Laporan Komprehensif"]
+        
+        # 🖌️ Format header
+        header_fill = PatternFill(start_color="003f5c", end_color="003f5c", fill_type="solid")
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Format header row
+        for col_num, col_name in enumerate(df_report.columns, 1):
+            cell = worksheet.cell(row=1, column=col_num)
+            cell.value = col_name
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
+            cell.border = border
+        
+        # 🎨 Format data cells
+        for row_num, row in enumerate(dataframe_to_rows(df_report, index=False, header=False), 2):
+            for col_num, value in enumerate(row, 1):
+                cell = worksheet.cell(row=row_num, column=col_num)
+                cell.value = value
                 cell.border = border
-            
-            # 🎨 Format data cells
-            for row_num, row in enumerate(dataframe_to_rows(df_report, index=False, header=False), 2):
-                for col_num, value in enumerate(row, 1):
-                    cell = worksheet.cell(row=row_num, column=col_num)
-                    cell.value = value
-                    cell.border = border
-                    
-                    # Kolom pertama (Kategori) - bold
-                    if col_num == 1:
+                
+                # Kolom pertama (Kategori)
+                if col_num == 1:
+                    # Section header (===) - bold, light gray background
+                    if isinstance(value, str) and '===' in value:
+                        cell.font = Font(bold=True, size=11, color="FFFFFF")
+                        cell.fill = PatternFill(start_color="1f5a7a", end_color="1f5a7a", fill_type="solid")
+                        cell.alignment = Alignment(horizontal='left', wrap_text=True)
+                    # Blank rows
+                    elif value == '':
+                        cell.fill = PatternFill(start_color="f0f0f0", end_color="f0f0f0", fill_type="solid")
+                    # Regular kategori
+                    else:
                         cell.font = Font(bold=True)
                         cell.alignment = Alignment(horizontal='left', wrap_text=True)
-                    
-                    # Kolom Rata-rata (terakhir) - highlight
-                    elif col_num == len(df_report.columns):
+                
+                # Kolom Rata-rata (terakhir) - highlight
+                elif col_num == len(df_report.columns):
+                    if isinstance(value, str) and '===' in value:
+                        cell.font = Font(bold=True, size=11, color="FFFFFF")
+                        cell.fill = PatternFill(start_color="1f5a7a", end_color="1f5a7a", fill_type="solid")
+                    elif value == '':
+                        cell.fill = PatternFill(start_color="f0f0f0", end_color="f0f0f0", fill_type="solid")
+                    else:
                         cell.fill = PatternFill(start_color="e8f4f8", end_color="e8f4f8", fill_type="solid")
                         cell.font = Font(bold=True)
                         cell.alignment = Alignment(horizontal='right')
-                        if isinstance(value, (int, float)) and "." in str(value):
-                            cell.number_format = '0.00'
-                    
-                    # Data cells (Stasiun) - right align
+                        if isinstance(value, (int, float)) and not isinstance(value, bool):
+                            if isinstance(value, float):
+                                cell.number_format = '0.00'
+                
+                # Data cells (Stasiun) - right align
+                else:
+                    if isinstance(value, str) and '===' in value:
+                        cell.font = Font(bold=True, size=11, color="FFFFFF")
+                        cell.fill = PatternFill(start_color="1f5a7a", end_color="1f5a7a", fill_type="solid")
+                    elif value == '':
+                        cell.fill = PatternFill(start_color="f0f0f0", end_color="f0f0f0", fill_type="solid")
                     else:
                         cell.alignment = Alignment(horizontal='right')
-                        if isinstance(value, (int, float)):
-                            if "." in str(value):
+                        if isinstance(value, (int, float)) and not isinstance(value, bool):
+                            if isinstance(value, float):
                                 cell.number_format = '0.00'
+        
+        # 📐 Auto column width
+        for col_num, col_name in enumerate(df_report.columns, 1):
+            col_letter = worksheet.cell(row=1, column=col_num).column_letter
+            max_length = len(str(col_name))
+            for row in worksheet.iter_rows(max_row=len(df_report) + 1, min_col=col_num, max_col=col_num):
+                try:
+                    if len(str(row[0].value)) > max_length:
+                        max_length = len(str(row[0].value))
+                except:
+                    pass
             
-            # 📐 Auto column width
-            for col_num, col_name in enumerate(df_report.columns, 1):
-                col_letter = worksheet.cell(row=1, column=col_num).column_letter
-                max_length = len(str(col_name))
-                for row in worksheet.iter_rows(max_row=len(df_report) + 1, min_col=col_num, max_col=col_num):
-                    try:
-                        if len(str(row[0].value)) > max_length:
-                            max_length = len(str(row[0].value))
-                    except:
-                        pass
-                
-                # Kategori kolom lebih lebar
-                if col_num == 1:
-                    worksheet.column_dimensions[col_letter].width = max(max_length + 3, 25)
-                else:
-                    worksheet.column_dimensions[col_letter].width = max(max_length + 2, 14)
-            
-            # Set row height untuk header
-            worksheet.row_dimensions[1].height = 30
+            # Kategori kolom lebih lebar
+            if col_num == 1:
+                worksheet.column_dimensions[col_letter].width = max(max_length + 3, 30)
+            else:
+                worksheet.column_dimensions[col_letter].width = max(max_length + 2, 14)
+        
+        # Set row height untuk header
+        worksheet.row_dimensions[1].height = 30
     
     buffer.seek(0)
     return buffer
