@@ -46,7 +46,7 @@ def get_satuan_labels(mode_tampilan="Data Terkonversi"):
         }
 
 
-def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkonversi", stasiun_order=None):
+def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkonversi", stasiun_order=None, kelimpahan_counts=None):
     """
     Siapkan laporan komprehensif dalam FORMAT TUNGGAL dengan struktur:
     - Baris 1: Header (Kategori | Stasiun1 | Stasiun2 | ... | Rata-rata)
@@ -62,6 +62,11 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         "Data Asli" atau "Data Terkonversi" (default: "Data Terkonversi")
     stasiun_order : list, optional
         Urutan stasiun yang diinginkan
+    kelimpahan_counts : DataFrame, optional
+        Agregasi kelimpahan (index=Stasiun, columns=Kelompok) yang sudah dihitung
+        dan (jika perlu) sudah dikonversi sesuai mode. Jika diberikan, nilai ini
+        akan dipakai sebagai sumber nilai kelimpahan untuk memastikan konsistensi
+        antara grafik dan tabel.
     
     Returns:
     --------
@@ -123,28 +128,40 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         'Rata-rata': ''
     })
     
+    # If kelimpahan_counts is provided, use it as the authoritative source.
+    # kelimpahan_counts is expected to have index=Stasiun and columns=Kelompok.
     for kelompok in kelompok_list:
-        df_k = df_merge[df_merge["Kelompok"] == kelompok]
         row_data = {"Kategori": f"Kelimpahan {kelompok} ({satuan['kelimpahan']})"}
         values = []
         
         for stasiun in stasiun_order:
-            df_st = df_k[df_k["Stasiun"] == stasiun]
-            # Gunakan kolom 'Kelimpahan' jika tersedia (lebih akurat), fallback ke hitung baris
-            if "Kelimpahan" in df_st.columns:
-                # Kelimpahan di df_merge adalah per spesies; jumlahkan untuk mendapat total individu per stasiun
-                kelimpahan = df_st["Kelimpahan"].sum()
+            if kelimpahan_counts is not None:
+                try:
+                    kel_val = kelimpahan_counts.loc[stasiun, kelompok]
+                except Exception:
+                    # If missing, fallback to 0
+                    kel_val = 0
+                # kelimpahan_counts SHOULD already reflect konversi sesuai mode
+                if mode_tampilan == "Data Terkonversi":
+                    row_data[stasiun] = round(kel_val, 2)
+                    values.append(kel_val)
+                else:
+                    row_data[stasiun] = int(kel_val)
+                    values.append(kel_val)
             else:
-                kelimpahan = len(df_st)
-            # Terapkan konversi bila mode tampilan meminta Data Terkonversi
-            if mode_tampilan == "Data Terkonversi":
-                kelimpahan_display = kelimpahan * KONVERSI_KELIMPAHAN_PER_HA
-                row_data[stasiun] = round(kelimpahan_display, 2)
-                values.append(kelimpahan_display)
-            else:
-                # Data asli: tampilkan sebagai integer (jumlah individu dalam 350 m²)
-                row_data[stasiun] = int(kelimpahan)
-                values.append(kelimpahan)
+                # Fallback: compute from df_merge (legacy behaviour)
+                df_st = df_merge[(df_merge["Stasiun"] == stasiun) & (df_merge["Kelompok"] == kelompok)]
+                if "Kelimpahan" in df_st.columns:
+                    kelimpahan = df_st.drop_duplicates(subset=["Famili", "Spesies"])["Kelimpahan"].sum()
+                else:
+                    kelimpahan = len(df_st)
+                if mode_tampilan == "Data Terkonversi":
+                    kel_display = kelimpahan * KONVERSI_KELIMPAHAN_PER_HA
+                    row_data[stasiun] = round(kel_display, 2)
+                    values.append(kel_display)
+                else:
+                    row_data[stasiun] = int(kelimpahan)
+                    values.append(kelimpahan)
         
         rata_rata = sum(values) / len(stasiun_order) if values else 0
         row_data["Rata-rata"] = round(rata_rata, 2) if mode_tampilan == "Data Terkonversi" else int(round(rata_rata))
@@ -214,7 +231,7 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
     return df_report
 
 
-def generate_comprehensive_excel(df_merge, df_indeks, mode_tampilan="Data Terkonversi", stasiun_order=None):
+def generate_comprehensive_excel(df_merge, df_indeks, mode_tampilan="Data Terkonversi", stasiun_order=None, kelimpahan_counts=None):
     """
     Generate Excel SINGLE-SHEET dengan format laporan komprehensif.
     
@@ -225,6 +242,8 @@ def generate_comprehensive_excel(df_merge, df_indeks, mode_tampilan="Data Terkon
     mode_tampilan : str
         "Data Asli" atau "Data Terkonversi" (default: "Data Terkonversi")
     stasiun_order : list, optional
+    kelimpahan_counts : DataFrame, optional
+        Agregasi kelimpahan yang akan dipakai di sheet
     
     Returns:
     --------
@@ -232,7 +251,7 @@ def generate_comprehensive_excel(df_merge, df_indeks, mode_tampilan="Data Terkon
         Excel file buffer siap untuk download
     """
     
-    df_report = prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan, stasiun_order)
+    df_report = prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan, stasiun_order, kelimpahan_counts)
     buffer = io.BytesIO()
     
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
