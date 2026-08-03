@@ -13,6 +13,9 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.dataframe import dataframe_to_rows
 
+# Import konstanta konversi kelimpahan
+from konversi import KONVERSI_KELIMPAHAN_PER_HA
+
 
 def get_satuan_labels(mode_tampilan="Data Terkonversi"):
     """
@@ -127,12 +130,24 @@ def prepare_comprehensive_report(df_merge, df_indeks, mode_tampilan="Data Terkon
         
         for stasiun in stasiun_order:
             df_st = df_k[df_k["Stasiun"] == stasiun]
-            kelimpahan = len(df_st)  # Jumlah individu
-            row_data[stasiun] = kelimpahan
-            values.append(kelimpahan)
+            # Gunakan kolom 'Kelimpahan' jika tersedia (lebih akurat), fallback ke hitung baris
+            if "Kelimpahan" in df_st.columns:
+                # Kelimpahan di df_merge adalah per spesies; jumlahkan untuk mendapat total individu per stasiun
+                kelimpahan = df_st["Kelimpahan"].sum()
+            else:
+                kelimpahan = len(df_st)
+            # Terapkan konversi bila mode tampilan meminta Data Terkonversi
+            if mode_tampilan == "Data Terkonversi":
+                kelimpahan_display = kelimpahan * KONVERSI_KELIMPAHAN_PER_HA
+                row_data[stasiun] = round(kelimpahan_display, 2)
+                values.append(kelimpahan_display)
+            else:
+                # Data asli: tampilkan sebagai integer (jumlah individu dalam 350 m²)
+                row_data[stasiun] = int(kelimpahan)
+                values.append(kelimpahan)
         
         rata_rata = sum(values) / len(stasiun_order) if values else 0
-        row_data["Rata-rata"] = round(rata_rata, 2)
+        row_data["Rata-rata"] = round(rata_rata, 2) if mode_tampilan == "Data Terkonversi" else int(round(rata_rata))
         all_rows.append(row_data)
     
     # Blank row
